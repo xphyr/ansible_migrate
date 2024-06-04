@@ -1,0 +1,11 @@
+all:
+    hosts:
+      alpineTest:
+      alpinetest315:
+    vars:
+        vcenter_hostname: "vcenter.example.local"
+        vcenter_username: "Administrator@vsphere.local"
+        vcenter_password: "SuperSecretPassord"
+        vcenter_validate_certs: "False"
+        vcenter_folder: "/Home/vm"
+        vcenter_datacenter: "Home" 

@@ -1,0 +1,78 @@
+---
+- name: Gather Data
+  hosts: all
+  gather_facts: no
+  connection: local
+  tasks:
+    #- name: Gather all registered virtual machines
+    #  community.vmware.vmware_vm_info:
+    #    hostname: '{{ vcenter_hostname }}'
+    #    username: '{{ vcenter_username }}'
+    #    password: '{{ vcenter_password }}'
+    #    validate_certs: "{{ vcenter_validate_certs }}"
+    #  delegate_to: localhost
+    #  register: vminfo
+
+    #- debug:
+    #    var: vminfo.virtual_machines
+
+    - community.vmware.vmware_guest_info:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        folder:  "{{ vcenter_folder }}"
+        name:  "{{ inventory_hostname }}"
+        datacenter: "{{ vcenter_datacenter }}"
+        validate_certs: "{{ vcenter_validate_certs }}"
+      delegate_to: localhost
+      register: vm
+
+    - debug:
+        var: vm
+
+    - name: Set the state of a virtual machine to poweroff
+      community.vmware.vmware_guest_powerstate:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: "{{ vcenter_validate_certs }}"
+        name: "{{ inventory_hostname }}"
+        state: powered-off
+      delegate_to: localhost
+      register: deploy
+
+    - name: Create a directory to export {{ inventory_hostname }} if it does not exist
+      ansible.builtin.file:
+        path: "/tmp/{{ inventory_hostname }}/"
+        state: directory
+        mode: '0755'
+
+    ## Uncomment once you have template stuff working
+    #- name: Export {{ inventory_hostname }} as ovf
+    #  community.vmware.vmware_export_ovf:
+    #    hostname: '{{ vcenter_hostname }}'
+    #    username: '{{ vcenter_username }}'
+    #    password: '{{ vcenter_password }}'
+    #    validate_certs: "{{ vcenter_validate_certs }}"
+    #    name: '{{ inventory_hostname }}'
+    #    export_with_images: true
+    #    export_dir: "/tmp/{{ inventory_hostname }}/"
+    #  delegate_to: localhost
+
+
+    #- name: upload qcow image
+    #  community.general.kubevirt_pvc:
+    #    name: pvc3
+    #    namespace: default
+    #    size: 100Mi
+    #    access_modes:
+    #      - ReadWriteOnce
+    #    cdi_source:
+    #      upload: yes
+    #    # You need the kubevirt_cdi_upload module to actually upload something
+
+    - name: VM template
+      delegate_to: localhost
+      template:
+        src: templates/template-vm.j2
+        dest: "resources/{{ inventory_hostname }}-vm.yaml"
